@@ -1,0 +1,43 @@
+services:
+  backend:
+    container_name: docuthinker-backend
+    build:
+      context: ../backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ../backend:/app
+      - /app/node_modules
+    depends_on:
+      - env-service   # غير الاسم هنا كذلك
+    networks:
+      - docuthinker-net
+
+  frontend:
+    container_name: docuthinker-frontend
+    build:
+      context: ../frontend
+    ports:
+      - "3001:3001"
+    environment:
+      - REACT_APP_BACKEND_URL=http://backend:3000
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - docuthinker-net
+
+  env-service:       
+    image: node:18-alpine
+    volumes:
+      - ../backend/.env:/app/.env
+    networks:
+      - docuthinker-net
+
+networks:
+  docuthinker-net:
+    driver: bridge

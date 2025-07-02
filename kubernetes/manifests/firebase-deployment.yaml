@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: firebase-deployment
+  labels:
+    app: firebase
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: firebase
+  template:
+    metadata:
+      labels:
+        app: firebase
+    spec:
+      containers:
+        - name: firebase
+          image: firebase/firebase-emulators:latest
+          ports:
+            - containerPort: 4000  
+            - containerPort: 5001  
+            - containerPort: 8080  
+            - containerPort: 9099  
+          args:
+            - "--project=demo-project"
+            - "--import=/firebase-data"
+            - "--export-on-exit"
+          volumeMounts:
+            - name: firebase-data
+              mountPath: /firebase-data
+      volumes:
+        - name: firebase-data
+          emptyDir: {}

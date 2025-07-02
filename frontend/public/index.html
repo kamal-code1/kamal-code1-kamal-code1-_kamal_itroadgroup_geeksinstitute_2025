@@ -1,0 +1,2350 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Summary-KML - Plateforme Complète d'Analyse de Documents par IA</title>
+    
+    <!-- CDN Libraries -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            scroll-behavior: smooth;
+            background-color: #f9fafb;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .gradient-bg-alt {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .gradient-bg-green {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: #667eea;
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        .upload-area.dragover {
+            border-color: #667eea;
+            background-color: rgba(102, 126, 234, 0.1);
+        }
+        
+        .document-card {
+            transition: all 0.3s ease;
+            min-height: 280px;
+        }
+        
+        .document-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chat-bubble {
+            animation: fadeInUp 0.3s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            background: #f3f4f6;
+            border-radius: 18px;
+            margin: 8px 0;
+        }
+        
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background: #9ca3af;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 2px;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+        
+        .ai-response {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #667eea;
+        }
+        
+        .user-message {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .feature-card {
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .glass-effect {
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        .section-divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #667eea, transparent);
+            margin: 4rem 0;
+        }
+        
+        .chart-container {
+            height: 400px;
+            max-height: 400px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            min-width: 300px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 16px;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            border-left: 4px solid #10b981;
+        }
+        
+        .notification.error {
+            border-left: 4px solid #ef4444;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        }
+        
+        .tab-active {
+            border-bottom: 2px solid #667eea;
+            color: #667eea;
+        }
+        
+        .form-input {
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(245, 87, 108, 0.3);
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .nav-link:hover {
+            color: #667eea;
+        }
+        
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #667eea;
+            border-radius: 1px;
+        }
+        
+        .hero-pattern {
+            background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0);
+            background-size: 20px 20px;
+        }
+        
+        .testimonial-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+        
+        .pricing-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .pricing-card:hover {
+            border-color: #667eea;
+            transform: translateY(-8px);
+        }
+        
+        .pricing-card.featured {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { 
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact; 
+            }
+            .section-divider { page-break-inside: avoid; }
+        }
+        
+        /* Responsive optimizations */
+        @media (max-width: 768px) {
+            .document-card {
+                min-height: auto;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+            
+            .modal-content {
+                margin: 1rem;
+                max-width: calc(100vw - 2rem);
+            }
+        }
+        
+        /* Animation classes */
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-in-left {
+            animation: slideInLeft 0.6s ease-out;
+        }
+        
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .slide-in-right {
+            animation: slideInRight 0.6s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app">
+        <!-- La navigation et le contenu seront injectés ici par JavaScript -->
+    </div>
+
+    <script>
+        // État global de l'application
+        const appState = {
+            currentPage: 'home',
+            user: null,
+            notifications: [],
+            documents: [
+                { 
+                    id: 1, 
+                    name: 'Rapport Annuel 2023', 
+                    type: 'PDF', 
+                    size: '4.2 MB', 
+                    date: '2023-12-15',
+                    status: 'completed',
+                    summary: 'Rapport financier complet avec analyse des performances et projections pour l\'année 2024. Document de 45 pages incluant bilans, comptes de résultat et analyses sectorielles.',
+                    progress: 100,
+                    insights: ['Croissance de 15%', 'Nouveaux marchés européens', 'Innovation technologique', 'ROI optimisé'],
+                    tags: ['Finance', 'Stratégie', 'Croissance']
+                },
+                { 
+                    id: 2, 
+                    name: 'Contrat Partenariat TechCorp', 
+                    type: 'DOCX', 
+                    size: '2.1 MB', 
+                    date: '2023-12-10',
+                    status: 'completed',
+                    summary: 'Accord de partenariat stratégique avec TechCorp incluant conditions commerciales, modalités techniques et clauses de confidentialité pour une durée de 3 ans.',
+                    progress: 100,
+                    insights: ['Durée 3 ans', 'Revenus partagés 60/40', 'Exclusivité régionale', 'Support technique inclus'],
+                    tags: ['Juridique', 'Partenariat', 'Commercial']
+                },
+                { 
+                    id: 3, 
+                    name: 'Étude de Marché Q4 2023', 
+                    type: 'PDF', 
+                    size: '7.8 MB', 
+                    date: '2023-12-08',
+                    status: 'processing',
+                    summary: 'Analyse approfondie du marché cible avec segmentation client, étude concurrentielle et identification des opportunités de croissance.',
+                    progress: 75,
+                    insights: ['Marché en croissance +12%', 'Concurrence modérée', 'Opportunités B2B importantes'],
+                    tags: ['Marketing', 'Analyse', 'B2B']
+                },
+                {
+                    id: 4,
+                    name: 'Présentation Investisseurs',
+                    type: 'PPTX',
+                    size: '15.3 MB',
+                    date: '2023-12-05',
+                    status: 'completed',
+                    summary: 'Pitch deck complet pour la levée de fonds série A, incluant modèle économique, projections financières et stratégie de développement.',
+                    progress: 100,
+                    insights: ['Objectif 2M€', 'Croissance 300%', 'Marché TAM 50M€', 'Équipe expérimentée'],
+                    tags: ['Finance', 'Investissement', 'Stratégie']
+                },
+                {
+                    id: 5,
+                    name: 'Manuel Utilisateur v2.1',
+                    type: 'PDF',
+                    size: '3.7 MB',
+                    date: '2023-12-03',
+                    status: 'completed',
+                    summary: 'Documentation technique complète pour les utilisateurs, incluant guides d\'installation, procédures d\'utilisation et résolution de problèmes.',
+                    progress: 100,
+                    insights: ['150 pages', 'Guide complet', 'Procédures détaillées', 'FAQ incluse'],
+                    tags: ['Documentation', 'Technique', 'Support']
+                }
+            ],
+            chatMessages: [],
+            uploadProgress: {},
+            searchTerm: '',
+            filterStatus: 'all',
+            filterType: 'all',
+            sortBy: 'date',
+            viewMode: 'grid',
+            analyticsData: {
+                documentsAnalyzed: 0,
+                totalDocuments: 0,
+                totalSize: 0,
+                timeSaved: 0,
+                insightsGenerated: 0,
+                accuracy: 0
+            },
+            selectedDocument: null
+        };
+
+        // Fonction pour ajouter une notification
+        function addNotification(message, type = 'success') {
+            const notification = {
+                id: Date.now(),
+                message,
+                type
+            };
+            
+            appState.notifications.push(notification);
+            
+            // Supprimer la notification après 5 secondes
+            setTimeout(() => {
+                appState.notifications = appState.notifications.filter(n => n.id !== notification.id);
+                renderApp();
+            }, 5000);
+            
+            renderApp();
+        }
+
+        // Fonction pour basculer entre les pages
+        function navigateTo(page) {
+            appState.currentPage = page;
+            renderApp();
+        }
+
+        // Fonction pour gérer la connexion
+        function login(email, password) {
+            // Simuler une vérification d'identifiants
+            setTimeout(() => {
+                const mockUser = {
+                    id: 1,
+                    name: email.split('@')[0],
+                    email: email,
+                    avatar: email.charAt(0).toUpperCase()
+                };
+                
+                appState.user = mockUser;
+                addNotification('Connexion réussie !');
+                navigateTo('documents');
+            }, 1000);
+        }
+
+        // Fonction pour gérer l'inscription
+        function register(firstName, lastName, email, password) {
+            // Simuler la création d'un compte
+            setTimeout(() => {
+                const mockUser = {
+                    id: 1,
+                    name: `${firstName} ${lastName}`,
+                    email: email,
+                    avatar: firstName.charAt(0).toUpperCase()
+                };
+                
+                appState.user = mockUser;
+                addNotification('Inscription réussie ! Bienvenue !');
+                navigateTo('documents');
+            }, 1000);
+        }
+
+        // Fonction pour gérer la déconnexion
+        function logout() {
+            appState.user = null;
+            navigateTo('home');
+        }
+
+        // Fonction pour gérer l'upload de fichiers
+        function handleFileUpload(files) {
+            Array.from(files).forEach(file => {
+                const fileId = Date.now() + Math.random();
+                
+                // Simulation du progress
+                appState.uploadProgress[fileId] = 0;
+                
+                const progressInterval = setInterval(() => {
+                    const currentProgress = appState.uploadProgress[fileId] || 0;
+                    
+                    if (currentProgress >= 100) {
+                        clearInterval(progressInterval);
+                        
+                        // Ajouter le document à la liste
+                        const newDoc = {
+                            id: fileId,
+                            name: file.name,
+                            type: file.type.split('/')[1]?.toUpperCase() || 'UNKNOWN',
+                            size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
+                            date: new Date().toISOString().split('T')[0],
+                            status: 'processing',
+                            summary: 'Analyse en cours... L\'IA traite votre document pour extraire les informations pertinentes.',
+                            progress: 0,
+                            insights: [],
+                            tags: ['Nouveau']
+                        };
+                        
+                        appState.documents.unshift(newDoc);
+                        addNotification(`${file.name} téléchargé avec succès`);
+                        
+                        // Simuler l'analyse du document
+                        let analysisProgress = 0;
+                        const analysisInterval = setInterval(() => {
+                            analysisProgress += 25;
+                            appState.documents = appState.documents.map(doc => 
+                                doc.id === fileId 
+                                    ? { ...doc, progress: analysisProgress }
+                                    : doc
+                            );
+                            
+                            if (analysisProgress >= 100) {
+                                clearInterval(analysisInterval);
+                                appState.documents = appState.documents.map(doc => 
+                                    doc.id === fileId 
+                                        ? { 
+                                            ...doc, 
+                                            status: 'completed',
+                                            summary: `Document analysé avec succès. L'IA a extrait les informations clés et généré des insights pertinents. Le document contient des données structurées facilement exploitables.`,
+                                            progress: 100,
+                                            insights: ['Contenu structuré', 'Données extraites', 'Analyse terminée', 'Insights disponibles'],
+                                            tags: ['Analysé', 'Récent']
+                                        }
+                                        : doc
+                                );
+                                addNotification(`Analyse de ${file.name} terminée`, 'success');
+                            }
+                            
+                            renderApp();
+                        }, 1000);
+                        
+                        delete appState.uploadProgress[fileId];
+                        renderApp();
+                        return;
+                    }
+                    
+                    appState.uploadProgress[fileId] = currentProgress + 10;
+                    renderApp();
+                }, 200);
+            });
+            
+            renderApp();
+        }
+
+        // Fonction pour gérer les messages du chat IA
+        function handleSendMessage(message) {
+            if (!message.trim()) return;
+
+            const userMessage = {
+                id: Date.now(),
+                text: message,
+                sender: 'user',
+                timestamp: new Date()
+            };
+
+            appState.chatMessages.push(userMessage);
+            renderApp();
+
+            // Réponses préprogrammées de l'IA
+            const responses = [
+                "Selon l'analyse de vos documents, voici les points clés identifiés : Les données financières montrent une croissance stable avec des indicateurs positifs sur les 12 derniers mois. Les recommandations incluent une diversification des investissements et une optimisation des coûts opérationnels.",
+                "J'ai trouvé plusieurs informations importantes dans vos fichiers. Voici un résumé détaillé : Le rapport révèle des opportunités de croissance dans les marchés émergents, avec une attention particulière sur l'innovation technologique et la satisfaction client.",
+                "Basé sur le contenu analysé, je peux vous fournir les insights suivants : Les tendances du marché indiquent une demande croissante pour les solutions numériques, avec un potentiel de croissance de 25% dans les 18 prochains mois.",
+                "L'analyse révèle des tendances intéressantes dans vos données. Les performances trimestrielles montrent une amélioration constante, particulièrement dans les segments B2B et les services premium.",
+                "Après traitement de vos documents, voici les principales conclusions : La stratégie actuelle est efficace mais nécessite des ajustements pour maximiser le ROI. Les recommandations incluent l'expansion géographique et l'investissement en R&D."
+            ];
+
+            // Simuler le délai de réponse de l'IA
+            setTimeout(() => {
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                const contextualInfo = appState.documents.length > 0 ? 
+                    `\n\nContexte d'analyse: ${appState.documents.length} document(s) traité(s). Types: ${[...new Set(appState.documents.map(d => d.type))].join(', ')}. Taille totale: ${appState.documents.reduce((acc, doc) => acc + parseFloat(doc.size), 0).toFixed(1)} MB.` : 
+                    "";
+                
+                const aiMessage = {
+                    id: Date.now() + 1,
+                    text: randomResponse + contextualInfo,
+                    sender: 'ai',
+                    timestamp: new Date()
+                };
+                
+                appState.chatMessages.push(aiMessage);
+                renderApp();
+            }, 1500);
+        }
+
+        // Fonction pour mettre à jour les données analytiques
+        function updateAnalytics() {
+            appState.analyticsData = {
+                documentsAnalyzed: appState.documents.filter(d => d.status === 'completed').length,
+                totalDocuments: appState.documents.length,
+                totalSize: appState.documents.reduce((acc, doc) => acc + parseFloat(doc.size), 0).toFixed(1),
+                timeSaved: 128 + appState.documents.length * 2.5,
+                insightsGenerated: appState.documents.reduce((acc, doc) => acc + doc.insights.length, 0),
+                accuracy: 96 + Math.random() * 2
+            };
+        }
+
+        // Composant Spinner
+        function Spinner({ size = 'md' }) {
+            const sizeClasses = {
+                sm: 'w-4 h-4',
+                md: 'w-8 h-8',
+                lg: 'w-12 h-12'
+            };
+
+            return `
+                <div class="spinner ${sizeClasses[size]} border-2 border-gray-200 border-t-indigo-600 rounded-full animate-spin"></div>
+            `;
+        }
+
+        // Composant de notification
+        function NotificationContainer() {
+            return `
+                <div class="fixed top-4 right-4 z-50 space-y-2 no-print">
+                    ${appState.notifications.map(notification => `
+                        <div 
+                            class="notification show ${notification.type === 'success' ? 'success' : 'error'}"
+                        >
+                            <div class="flex items-center">
+                                <i class="fas ${notification.type === 'success' ? 'fa-check-circle text-green-500' : 'fa-exclamation-circle text-red-500'} mr-2"></i>
+                                <span class="text-sm font-medium">${notification.message}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Composant de navigation
+        function Navbar() {
+            const navItems = [
+                { id: 'home', label: 'Accueil', icon: 'fa-home' },
+                { id: 'documents', label: 'Documents', icon: 'fa-file-alt', requiresAuth: true },
+                { id: 'how-to-use', label: 'Guide', icon: 'fa-question-circle' },
+                { id: 'pricing', label: 'Tarifs', icon: 'fa-tags' }
+            ];
+
+            return `
+                <nav class="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-40 no-print">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div class="flex justify-between items-center h-16">
+                            <!-- Logo -->
+                            <div class="flex items-center cursor-pointer" onclick="navigateTo('home')">
+                                <i class="fas fa-brain text-3xl text-indigo-600 mr-3"></i>
+                                <span class="text-2xl font-bold text-gray-900">AI-Summary-KML</span>
+                            </div>
+
+                            <!-- Navigation Desktop -->
+                            <div class="hidden md:flex items-center space-x-8">
+                                ${navItems.map(item => `
+                                    ${(!item.requiresAuth || appState.user) ? `
+                                        <button
+                                            onclick="navigateTo('${item.id}')"
+                                            class="nav-link flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                                                appState.currentPage === item.id 
+                                                    ? 'text-indigo-600 bg-indigo-50' 
+                                                    : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50'
+                                            }"
+                                        >
+                                            <i class="fas ${item.icon}"></i>
+                                            <span>${item.label}</span>
+                                        </button>
+                                    ` : ''}
+                                `).join('')}
+                            </div>
+
+                            <!-- Actions utilisateur -->
+                            <div class="flex items-center space-x-4">
+                                ${appState.user ? `
+                                    <div class="flex items-center space-x-4">
+                                        <button
+                                            onclick="navigateTo('profile')"
+                                            class="flex items-center space-x-2 text-gray-700 hover:text-indigo-600"
+                                        >
+                                            <div class="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center">
+                                                <span class="text-white font-semibold text-sm">
+                                                    ${appState.user.avatar}
+                                                </span>
+                                            </div>
+                                            <span class="hidden md:block font-medium">${appState.user.name}</span>
+                                        </button>
+                                        <button
+                                            onclick="logout()"
+                                            class="text-gray-500 hover:text-red-600 transition-colors"
+                                            title="Déconnexion"
+                                        >
+                                            <i class="fas fa-sign-out-alt"></i>
+                                        </button>
+                                    </div>
+                                ` : `
+                                    <div class="flex items-center space-x-2">
+                                        <button
+                                            onclick="navigateTo('login')"
+                                            class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+                                        >
+                                            Connexion
+                                        </button>
+                                        <button
+                                            onclick="navigateTo('register')"
+                                            class="btn-primary text-white px-4 py-2 rounded-md text-sm font-medium"
+                                        >
+                                            S'inscrire
+                                        </button>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+            `;
+        }
+
+        // Page d'accueil
+        function LandingPage() {
+            const testimonials = [
+                {
+                    id: 1,
+                    name: "Marie Dupont",
+                    role: "Directrice Marketing",
+                    company: "TechCorp",
+                    content: "AI-Summary-KML a révolutionné notre façon de traiter les documents. Nous économisons 5 heures par semaine!",
+                    rating: 5,
+                    avatar: "MD"
+                },
+                {
+                    id: 2,
+                    name: "Jean Martin",
+                    role: "Consultant",
+                    company: "Freelance",
+                    content: "Interface intuitive et résultats impressionnants. L'IA comprend vraiment le contexte de mes documents.",
+                    rating: 5,
+                    avatar: "JM"
+                },
+                {
+                    id: 3,
+                    name: "Sophie Laurent",
+                    role: "Avocate",
+                    company: "Cabinet Laurent & Associés",
+                    content: "Parfait pour analyser des contrats complexes. La précision de l'analyse est remarquable.",
+                    rating: 5,
+                    avatar: "SL"
+                }
+            ];
+
+            const pricingPlans = [
+                {
+                    id: 'starter',
+                    name: 'Starter',
+                    price: '0',
+                    period: 'Gratuit',
+                    description: 'Parfait pour découvrir nos services',
+                    features: [
+                        '5 documents par mois',
+                        'Analyse basique',
+                        'Support email',
+                        'Formats PDF et DOCX'
+                    ],
+                    popular: false
+                },
+                {
+                    id: 'pro',
+                    name: 'Professionnel',
+                    price: '29',
+                    period: '/mois',
+                    description: 'Idéal pour les professionnels',
+                    features: [
+                        '100 documents par mois',
+                        'Analyse avancée avec IA',
+                        'Support prioritaire',
+                        'Tous formats supportés',
+                        'API access',
+                        'Intégrations'
+                    ],
+                    popular: true
+                },
+                {
+                    id: 'enterprise',
+                    name: 'Enterprise',
+                    price: '99',
+                    period: '/mois',
+                    description: 'Pour les grandes équipes',
+                    features: [
+                        'Documents illimités',
+                        'IA personnalisée',
+                        'Support 24/7',
+                        'Formations incluses',
+                        'Sécurité renforcée',
+                        'Déploiement sur site'
+                    ],
+                    popular: false
+                }
+            ];
+
+            return `
+                <div class="min-h-screen">
+                    ${Navbar()}
+                    
+                    <!-- Hero Section -->
+                    <section class="gradient-bg hero-pattern text-white py-20">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div class="text-center fade-in">
+                                <h1 class="text-5xl md:text-7xl font-bold mb-8 leading-tight">
+                                    Révolutionnez vos
+                                    <span class="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-400">
+                                        analyses documentaires
+                                    </span>
+                                </h1>
+                                <p class="text-xl md:text-2xl mb-12 opacity-90 max-w-4xl mx-auto leading-relaxed">
+                                    Transformez vos documents en insights actionables grâce à notre technologie d'intelligence artificielle de pointe. 
+                                    Économisez du temps, augmentez votre productivité et prenez de meilleures décisions.
+                                </p>
+                                <div class="flex flex-col sm:flex-row justify-center gap-6 mb-12">
+                                    <button 
+                                        onclick="${appState.user ? "navigateTo('documents')" : "navigateTo('register')"}"
+                                        class="bg-white text-indigo-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition duration-300 transform hover:scale-105 shadow-lg"
+                                    >
+                                        <i class="fas fa-rocket mr-3"></i>
+                                        Commencer gratuitement
+                                    </button>
+                                    <button 
+                                        onclick="navigateTo('how-to-use')"
+                                        class="border-2 border-white text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white hover:text-indigo-600 transition duration-300 transform hover:scale-105"
+                                    >
+                                        <i class="fas fa-play mr-3"></i>
+                                        Voir comment ça marche
+                                    </button>
+                                </div>
+                                
+                                <!-- Stats Section -->
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16">
+                                    <div class="text-center">
+                                        <div class="text-4xl font-bold mb-2">10K+</div>
+                                        <div class="text-sm opacity-80">Documents analysés</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-4xl font-bold mb-2">98%</div>
+                                        <div class="text-sm opacity-80">Précision IA</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-4xl font-bold mb-2">5000+</div>
+                                        <div class="text-sm opacity-80">Utilisateurs actifs</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-4xl font-bold mb-2">24h</div>
+                                        <div class="text-sm opacity-80">Support disponible</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Features Section -->
+                    <section class="py-20 bg-white">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div class="text-center mb-16 fade-in">
+                                <h2 class="text-4xl font-bold text-gray-900 mb-6">
+                                    Fonctionnalités Révolutionnaires
+                                </h2>
+                                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                                    Découvrez comment notre IA transforme la façon dont vous interagissez avec vos documents
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div class="feature-card rounded-xl p-8 text-center slide-in-left">
+                                    <div class="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <i class="fas fa-brain text-3xl text-white"></i>
+                                    </div>
+                                    <h3 class="text-2xl font-bold mb-4">IA Contextuelle</h3>
+                                    <p class="text-gray-600 mb-6">
+                                        Notre IA comprend le contexte et les nuances de vos documents pour fournir des analyses précises et pertinentes.
+                                    </p>
+                                    <ul class="text-sm text-gray-500 space-y-2">
+                                        <li><i class="fas fa-check text-green-500 mr-2"></i>Compréhension sémantique</li>
+                                        <li><i class="fas fa-check text-green-500 mr-2"></i>Analyse multilingue</li>
+                                        <li><i class="fas fa-check text-green-500 mr-2"></i>Extraction d'entités</li>
+                                    </ul>
+                                </div>
+
+                                <div class="feature-card rounded-xl p-8 text-center fade-in">
+                                    <div class="w-20 h-20 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <i class="fas fa-shield-alt text-3xl text-white"></i>
+                                    </div>
+                                    <h3 class="text-2xl font-bold mb-4">Sécurité Maximale</h3>
+                                    <p class="text-gray-600 mb-6">
+                                        Vos documents sont protégés par un chiffrement de niveau militaire et une conformité RGPD stricte.
+                                    </p>
+                                    <ul class="text-sm text-gray-500 space-y-2">
+                                        <li><i class="fas fa-check text-green-500 mr-2"></i>Chiffrement AES-256</li>
+                                        <li><i class="fas fa-check text-green-500 mr-2"></i>Conformité RGPD</li>
+                                        <li><i class="fas fa-check text-green-500 mr-2"></i>Audit de sécurité</li>
+                                    </ul>
+                                </div>
+
+                                <div class="feature-card rounded-xl p-8 text-center slide-in-right">
+                                    <div class="w-20 h-20 bg-gradient-to-br from-pink-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <i class="fas fa-rocket text-3xl text-white"></i>
+                                    </div>
+                                    <h3 class="text-2xl font-bold mb-4">Performance Ultra-Rapide</h3>
+                                    <p class="text-gray-600 mb-6">
+                                        Traitement instantané même pour les documents les plus volumineux grâce à notre infrastructure cloud optimisée.
+                                    </p>
+                                    <ul class="text-sm text-gray-500 space-y-2">
+                                        <li><i class="fas fa-check text-green-500 mr-2"></i>Traitement temps réel</li>
+                                        <li><i class="fas fa-check text-green-500 mr-2"></i>Scalabilité automatique</li>
+                                        <li><i class="fas fa-check text-green-500 mr-2"></i>API haute performance</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Testimonials Section -->
+                    <section class="py-20 bg-gray-50">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div class="text-center mb-16 fade-in">
+                                <h2 class="text-4xl font-bold text-gray-900 mb-6">
+                                    Ce que disent nos utilisateurs
+                                </h2>
+                                <p class="text-xl text-gray-600">
+                                    Rejoignez des milliers de professionnels qui nous font confiance
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                ${testimonials.map((testimonial, index) => `
+                                    <div key="${testimonial.id}" class="testimonial-card ${index % 2 === 0 ? 'slide-in-left' : 'slide-in-right'}">
+                                        <div class="flex items-center mb-4">
+                                            <div class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center mr-4">
+                                                <span class="text-white font-bold">${testimonial.avatar}</span>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-bold text-gray-900">${testimonial.name}</h4>
+                                                <p class="text-sm text-gray-600">${testimonial.role}</p>
+                                                <p class="text-xs text-gray-500">${testimonial.company}</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex mb-4">
+                                            ${'<i class="fas fa-star text-yellow-400"></i>'.repeat(testimonial.rating)}
+                                        </div>
+                                        <p class="text-gray-700 italic">"${testimonial.content}"</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Pricing Section -->
+                    <section class="py-20 bg-white" id="pricing">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div class="text-center mb-16 fade-in">
+                                <h2 class="text-4xl font-bold text-gray-900 mb-6">
+                                    Tarifs Transparents
+                                </h2>
+                                <p class="text-xl text-gray-600">
+                                    Choisissez le plan qui correspond à vos besoins
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                ${pricingPlans.map((plan, index) => `
+                                    <div class="pricing-card ${plan.popular ? 'featured' : ''} ${index === 0 ? 'slide-in-left' : index === 1 ? 'fade-in' : 'slide-in-right'}">
+                                        ${plan.popular ? `
+                                            <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                                                <span class="bg-yellow-400 text-black px-4 py-1 rounded-full text-sm font-bold">
+                                                    Le plus populaire
+                                                </span>
+                                            </div>
+                                        ` : ''}
+                                        
+                                        <div class="text-center mb-8">
+                                            <h3 class="text-2xl font-bold mb-2">${plan.name}</h3>
+                                            <p class="text-sm opacity-80 mb-4">${plan.description}</p>
+                                            <div class="flex items-baseline justify-center">
+                                                <span class="text-5xl font-bold">${plan.price}€</span>
+                                                <span class="text-lg opacity-80 ml-1">${plan.period}</span>
+                                            </div>
+                                        </div>
+
+                                        <ul class="space-y-3 mb-8">
+                                            ${plan.features.map(feature => `
+                                                <li class="flex items-center">
+                                                    <i class="fas fa-check text-green-400 mr-3"></i>
+                                                    <span>${feature}</span>
+                                                </li>
+                                            `).join('')}
+                                        </ul>
+
+                                        <button class="w-full py-3 px-6 rounded-lg font-bold transition-all duration-300 ${
+                                            plan.popular 
+                                                ? 'bg-white text-indigo-600 hover:bg-gray-100' 
+                                                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                        }">
+                                            ${plan.price === '0' ? 'Commencer gratuitement' : 'Choisir ce plan'}
+                                        </button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- CTA Section -->
+                    <section class="py-20 gradient-bg-alt text-white">
+                        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center fade-in">
+                            <h2 class="text-4xl font-bold mb-6">
+                                Prêt à transformer votre productivité ?
+                            </h2>
+                            <p class="text-xl mb-8 opacity-90">
+                                Rejoignez des milliers d'utilisateurs qui font déjà confiance à AI-Summary-KML
+                            </p>
+                            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                                <button 
+                                    onclick="${appState.user ? "navigateTo('documents')" : "navigateTo('register')"}"
+                                    class="bg-white text-pink-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition duration-300 transform hover:scale-105"
+                                >
+                                    <i class="fas fa-rocket mr-2"></i>
+                                    Essayer maintenant
+                                </button>
+                                <button 
+                                    onclick="navigateTo('how-to-use')"
+                                    class="border-2 border-white text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white hover:text-pink-600 transition duration-300"
+                                >
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    En savoir plus
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            `;
+        }
+
+        // Page de connexion
+        function LoginPage() {
+            return `
+                <div class="min-h-screen gradient-bg flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+                    <div class="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8">
+                        <div class="text-center mb-8">
+                            <i class="fas fa-brain text-5xl text-indigo-600 mb-4"></i>
+                            <h2 class="text-3xl font-bold text-gray-900">Connexion</h2>
+                            <p class="text-gray-600 mt-2">Accédez à votre espace d'analyse</p>
+                        </div>
+
+                        <form id="loginForm" class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Adresse email
+                                </label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="vous@exemple.com"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Mot de passe
+                                </label>
+                                <input
+                                    type="password"
+                                    id="password"
+                                    class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="••••••••"
+                                    required
+                                />
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <label class="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        id="remember"
+                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                    />
+                                    <span class="ml-2 text-sm text-gray-600">Se souvenir de moi</span>
+                                </label>
+                                <button
+                                    type="button"
+                                    onclick="navigateTo('forgot-password')"
+                                    class="text-sm text-indigo-600 hover:text-indigo-800"
+                                >
+                                    Mot de passe oublié ?
+                                </button>
+                            </div>
+
+                            <button
+                                type="submit"
+                                class="btn-primary w-full text-white py-3 px-4 rounded-lg font-semibold hover:shadow-lg transition-all duration-300"
+                            >
+                                Se connecter
+                            </button>
+
+                            <div class="text-center">
+                                <span class="text-gray-600">Pas encore de compte ? </span>
+                                <button
+                                    type="button"
+                                    onclick="navigateTo('register')"
+                                    class="text-indigo-600 hover:text-indigo-800 font-semibold"
+                                >
+                                    S'inscrire
+                                </button>
+                            </div>
+
+                            <!-- Options de connexion sociale -->
+                            <div class="mt-6">
+                                <div class="relative">
+                                    <div class="absolute inset-0 flex items-center">
+                                        <div class="w-full border-t border-gray-300" />
+                                    </div>
+                                    <div class="relative flex justify-center text-sm">
+                                        <span class="px-2 bg-white text-gray-500">Ou continuer avec</span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 grid grid-cols-2 gap-3">
+                                    <button
+                                        type="button"
+                                        class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                                    >
+                                        <i class="fab fa-google text-red-500"></i>
+                                        <span class="ml-2">Google</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                                    >
+                                        <i class="fab fa-microsoft text-blue-500"></i>
+                                        <span class="ml-2">Microsoft</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Page d'inscription
+        function RegisterPage() {
+            return `
+                <div class="min-h-screen gradient-bg-green flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+                    <div class="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8">
+                        <div class="text-center mb-8">
+                            <i class="fas fa-user-plus text-5xl text-indigo-600 mb-4"></i>
+                            <h2 class="text-3xl font-bold text-gray-900">Inscription</h2>
+                            <p class="text-gray-600 mt-2">Créez votre compte gratuitement</p>
+                        </div>
+
+                        <form id="registerForm" class="space-y-6">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Prénom
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="firstName"
+                                        class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="Jean"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Nom
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="lastName"
+                                        class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="Dupont"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Adresse email
+                                </label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="jean.dupont@exemple.com"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Mot de passe
+                                </label>
+                                <input
+                                    type="password"
+                                    id="password"
+                                    class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="••••••••"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Confirmer le mot de passe
+                                </label>
+                                <input
+                                    type="password"
+                                    id="confirmPassword"
+                                    class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="••••••••"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label class="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        id="terms"
+                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                        required
+                                    />
+                                    <span class="ml-2 text-sm text-gray-600">
+                                        J'accepte les <a href="#" class="text-indigo-600 hover:text-indigo-800">conditions d'utilisation</a>
+                                        et la <a href="#" class="text-indigo-600 hover:text-indigo-800">politique de confidentialité</a>
+                                    </span>
+                                </label>
+                            </div>
+
+                            <button
+                                type="submit"
+                                class="btn-primary w-full text-white py-3 px-4 rounded-lg font-semibold hover:shadow-lg transition-all duration-300"
+                            >
+                                Créer mon compte
+                            </button>
+
+                            <div class="text-center">
+                                <span class="text-gray-600">Déjà un compte ? </span>
+                                <button
+                                    type="button"
+                                    onclick="navigateTo('login')"
+                                    class="text-indigo-600 hover:text-indigo-800 font-semibold"
+                                >
+                                    Se connecter
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Page des documents
+        function DocumentsPage() {
+            updateAnalytics();
+            
+            // Filtrage et tri des documents
+            const filteredAndSortedDocuments = appState.documents
+                .filter(doc => {
+                    const matchesSearch = doc.name.toLowerCase().includes(appState.searchTerm.toLowerCase()) ||
+                                        doc.summary.toLowerCase().includes(appState.searchTerm.toLowerCase()) ||
+                                        doc.tags.some(tag => tag.toLowerCase().includes(appState.searchTerm.toLowerCase()));
+                    const matchesStatus = appState.filterStatus === 'all' || doc.status === appState.filterStatus;
+                    const matchesType = appState.filterType === 'all' || doc.type === appState.filterType;
+                    return matchesSearch && matchesStatus && matchesType;
+                })
+                .sort((a, b) => {
+                    switch (appState.sortBy) {
+                        case 'name':
+                            return a.name.localeCompare(b.name);
+                        case 'size':
+                            return parseFloat(b.size) - parseFloat(a.size);
+                        case 'date':
+                        default:
+                            return new Date(b.date) - new Date(a.date);
+                    }
+                });
+            
+            return `
+                <div class="min-h-screen bg-gray-50">
+                    ${Navbar()}
+                    
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <div class="mb-8">
+                            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                                Tableau de Bord
+                            </h1>
+                            <p class="text-gray-600">
+                                Bienvenue ${appState.user?.name || 'Utilisateur'}, gérez et analysez vos documents avec l'intelligence artificielle
+                            </p>
+                        </div>
+                        
+                        <!-- Zone d'upload -->
+                        <div class="bg-white rounded-xl shadow-lg p-8 mb-8 fade-in">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                                <i class="fas fa-cloud-upload-alt mr-3 text-indigo-600"></i>
+                                Télécharger des Documents
+                            </h2>
+                            
+                            <div 
+                                class="upload-area border-2 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer transition-all duration-300"
+                                id="uploadArea"
+                            >
+                                <div class="flex flex-col items-center">
+                                    <i class="fas fa-cloud-upload-alt text-6xl text-gray-400 mb-4"></i>
+                                    <h3 class="text-2xl font-semibold text-gray-700 mb-2">
+                                        Glissez-déposez vos fichiers ici
+                                    </h3>
+                                    <p class="text-gray-500 mb-4 text-lg">
+                                        ou cliquez pour parcourir vos fichiers
+                                    </p>
+                                    <div class="text-sm text-gray-400 space-y-1">
+                                        <p><i class="fas fa-check text-green-500 mr-2"></i>Formats supportés: PDF, DOCX, TXT, PPT, JPG, PNG</p>
+                                        <p><i class="fas fa-check text-green-500 mr-2"></i>Taille maximale: 50MB par fichier</p>
+                                        <p><i class="fas fa-check text-green-500 mr-2"></i>Analyse IA automatique</p>
+                                    </div>
+                                </div>
+                                
+                                <input
+                                    type="file"
+                                    id="fileInput"
+                                    multiple
+                                    class="hidden"
+                                    accept=".pdf,.docx,.txt,.ppt,.pptx,.jpg,.jpeg,.png"
+                                />
+                            </div>
+
+                            <!-- Barre de progression pour les uploads en cours -->
+                            ${Object.entries(appState.uploadProgress).map(([fileId, progress]) => `
+                                ${progress !== undefined ? `
+                                    <div class="mt-4 bg-gray-50 p-4 rounded-lg">
+                                        <div class="flex justify-between text-sm text-gray-600 mb-2">
+                                            <span class="flex items-center">
+                                                <i class="fas fa-upload text-indigo-600 mr-2"></i>
+                                                Upload en cours...
+                                            </span>
+                                            <span class="font-semibold">${progress}%</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div 
+                                                class="progress-fill" 
+                                                style="width: ${progress}%"
+                                            ></div>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            `).join('')}
+                        </div>
+                        
+                        <!-- Gestion des documents -->
+                        <div class="bg-white rounded-xl shadow-lg p-8 mb-8 fade-in">
+                            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 space-y-4 lg:space-y-0">
+                                <h2 class="text-2xl font-bold text-gray-800">
+                                    <i class="fas fa-file-alt mr-3 text-indigo-600"></i>
+                                    Mes Documents (${filteredAndSortedDocuments.length})
+                                </h2>
+                                
+                                <!-- Barre de recherche et filtres -->
+                                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full lg:w-auto">
+                                    <div class="relative">
+                                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                        <input
+                                            type="text"
+                                            placeholder="Rechercher dans les documents..."
+                                            value="${appState.searchTerm}"
+                                            oninput="appState.searchTerm = this.value; renderApp()"
+                                            class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-64"
+                                        />
+                                    </div>
+                                    
+                                    <select 
+                                        value="${appState.filterStatus}"
+                                        onchange="appState.filterStatus = this.value; renderApp()"
+                                        class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="all">Tous les statuts</option>
+                                        <option value="completed">Terminé</option>
+                                        <option value="processing">En cours</option>
+                                        <option value="pending">En attente</option>
+                                    </select>
+                                    
+                                    <select 
+                                        value="${appState.filterType}"
+                                        onchange="appState.filterType = this.value; renderApp()"
+                                        class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="all">Tous les types</option>
+                                        <option value="PDF">PDF</option>
+                                        <option value="DOCX">DOCX</option>
+                                        <option value="PPTX">PPTX</option>
+                                        <option value="TXT">TXT</option>
+                                    </select>
+                                    
+                                    <select 
+                                        value="${appState.sortBy}"
+                                        onchange="appState.sortBy = this.value; renderApp()"
+                                        class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="date">Trier par date</option>
+                                        <option value="name">Trier par nom</option>
+                                        <option value="size">Trier par taille</option>
+                                    </select>
+                                    
+                                    <div class="flex border border-gray-300 rounded-lg overflow-hidden">
+                                        <button
+                                            onclick="appState.viewMode = 'grid'; renderApp()"
+                                            class="px-3 py-2 ${appState.viewMode === 'grid' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}"
+                                        >
+                                            <i class="fas fa-th"></i>
+                                        </button>
+                                        <button
+                                            onclick="appState.viewMode = 'list'; renderApp()"
+                                            class="px-3 py-2 ${appState.viewMode === 'list' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}"
+                                        >
+                                            <i class="fas fa-list"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            ${filteredAndSortedDocuments.length === 0 ? `
+                                <div class="text-center py-12">
+                                    <i class="fas fa-file-alt text-6xl text-gray-300 mb-4"></i>
+                                    <h3 class="text-xl font-semibold text-gray-600 mb-2">Aucun document trouvé</h3>
+                                    <p class="text-gray-500">
+                                        ${appState.searchTerm || appState.filterStatus !== 'all' || appState.filterType !== 'all' 
+                                            ? 'Essayez de modifier vos critères de recherche'
+                                            : 'Commencez par télécharger votre premier document'
+                                        }
+                                    </p>
+                                </div>
+                            ` : `
+                                <div class="${appState.viewMode === 'grid' 
+                                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                                    : "space-y-4"
+                                }">
+                                    ${filteredAndSortedDocuments.map(doc => `
+                                        <div 
+                                            class="document-card bg-white border border-gray-200 rounded-xl cursor-pointer transition-all duration-300 hover:border-indigo-300 ${
+                                                appState.viewMode === 'grid' ? 'p-6' : 'p-4 flex items-center space-x-4'
+                                            }"
+                                            onclick="appState.selectedDocument = ${JSON.stringify(doc)}; renderApp()"
+                                        >
+                                            ${appState.viewMode === 'grid' ? `
+                                                <div class="flex items-start justify-between mb-4">
+                                                    <div class="flex items-center">
+                                                        <div class="w-14 h-14 bg-indigo-100 rounded-xl flex items-center justify-center mr-4">
+                                                            <i class="fas ${
+                                                                doc.type === 'PDF' ? 'fa-file-pdf text-red-500' :
+                                                                doc.type === 'DOCX' ? 'fa-file-word text-blue-500' :
+                                                                doc.type === 'PPTX' ? 'fa-file-powerpoint text-orange-500' :
+                                                                'fa-file-alt text-gray-500'
+                                                            } text-2xl"></i>
+                                                        </div>
+                                                        <div class="flex-1">
+                                                            <h3 class="font-bold text-gray-800 text-base leading-tight mb-1">${doc.name}</h3>
+                                                            <p class="text-sm text-gray-500">${doc.type} • ${doc.size}</p>
+                                                        </div>
+                                                    </div>
+                                                    <span class="px-3 py-1 text-xs font-semibold rounded-full ${
+                                                        doc.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                                        doc.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                                                        'bg-gray-100 text-gray-800'
+                                                    }">
+                                                        ${doc.status === 'completed' ? 'Terminé' : 
+                                                         doc.status === 'processing' ? 'En cours' : 'En attente'}
+                                                    </span>
+                                                </div>
+
+                                                ${doc.status === 'processing' ? `
+                                                    <div class="mb-4">
+                                                        <div class="flex justify-between text-xs text-gray-600 mb-2">
+                                                            <span class="flex items-center">
+                                                                <i class="fas fa-brain text-indigo-600 mr-1"></i>
+                                                                Analyse IA en cours
+                                                            </span>
+                                                            <span class="font-semibold">${doc.progress}%</span>
+                                                        </div>
+                                                        <div class="progress-bar">
+                                                            <div 
+                                                                class="progress-fill" 
+                                                                style="width: ${doc.progress}%"
+                                                            ></div>
+                                                        </div>
+                                                    </div>
+                                                ` : ''}
+
+                                                <div class="mb-4">
+                                                    <p class="text-sm text-gray-600 line-clamp-3">${doc.summary}</p>
+                                                </div>
+
+                                                ${doc.tags.length > 0 ? `
+                                                    <div class="mb-4">
+                                                        <div class="flex flex-wrap gap-1">
+                                                            ${doc.tags.slice(0, 3).map(tag => `
+                                                                <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                                                    ${tag}
+                                                                </span>
+                                                            `).join('')}
+                                                            ${doc.tags.length > 3 ? `
+                                                                <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                                                    +${doc.tags.length - 3}
+                                                                </span>
+                                                            ` : ''}
+                                                        </div>
+                                                    </div>
+                                                ` : ''}
+
+                                                ${doc.insights.length > 0 ? `
+                                                    <div class="mb-4">
+                                                        <h4 class="text-xs font-semibold text-gray-700 mb-2 flex items-center">
+                                                            <i class="fas fa-lightbulb text-yellow-500 mr-1"></i>
+                                                            Insights clés:
+                                                        </h4>
+                                                        <div class="flex flex-wrap gap-1">
+                                                            ${doc.insights.slice(0, 2).map(insight => `
+                                                                <span class="px-2 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-full">
+                                                                    ${insight}
+                                                                </span>
+                                                            `).join('')}
+                                                            ${doc.insights.length > 2 ? `
+                                                                <span class="px-2 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-full">
+                                                                    +${doc.insights.length - 2}
+                                                                </span>
+                                                            ` : ''}
+                                                        </div>
+                                                    </div>
+                                                ` : ''}
+
+                                                <div class="flex justify-between items-center text-xs text-gray-500 pt-4 border-t border-gray-100">
+                                                    <span class="flex items-center">
+                                                        <i class="fas fa-calendar mr-1"></i>
+                                                        ${new Date(doc.date).toLocaleDateString('fr-FR')}
+                                                    </span>
+                                                    <div class="flex space-x-3">
+                                                        <button class="text-indigo-600 hover:text-indigo-800 transition-colors" title="Voir les détails">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                        <button class="text-indigo-600 hover:text-indigo-800 transition-colors" title="Télécharger">
+                                                            <i class="fas fa-download"></i>
+                                                        </button>
+                                                        <button class="text-indigo-600 hover:text-indigo-800 transition-colors" title="Partager">
+                                                            <i class="fas fa-share"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ` : `
+                                                <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                                    <i class="fas ${
+                                                        doc.type === 'PDF' ? 'fa-file-pdf text-red-500' :
+                                                        doc.type === 'DOCX' ? 'fa-file-word text-blue-500' :
+                                                        doc.type === 'PPTX' ? 'fa-file-powerpoint text-orange-500' :
+                                                        'fa-file-alt text-gray-500'
+                                                    } text-xl"></i>
+                                                </div>
+                                                
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="flex items-center justify-between mb-1">
+                                                        <h3 class="font-semibold text-gray-800 truncate">${doc.name}</h3>
+                                                        <span class="px-2 py-1 text-xs font-semibold rounded-full ml-2 ${
+                                                            doc.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                                            doc.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                                                            'bg-gray-100 text-gray-800'
+                                                        }">
+                                                            ${doc.status === 'completed' ? 'Terminé' : 
+                                                             doc.status === 'processing' ? 'En cours' : 'En attente'}
+                                                        </span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between text-sm text-gray-500">
+                                                        <span>${doc.type} • ${doc.size}</span>
+                                                        <span>${new Date(doc.date).toLocaleDateString('fr-FR')}</span>
+                                                    </div>
+                                                    <p class="text-sm text-gray-600 mt-1 line-clamp-1">${doc.summary}</p>
+                                                </div>
+                                                
+                                                <div class="flex space-x-2">
+                                                    <button class="text-indigo-600 hover:text-indigo-800 p-2 rounded-lg hover:bg-indigo-50 transition-colors" title="Voir">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="text-indigo-600 hover:text-indigo-800 p-2 rounded-lg hover:bg-indigo-50 transition-colors" title="Télécharger">
+                                                        <i class="fas fa-download"></i>
+                                                    </button>
+                                                </div>
+                                            `}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `}
+                        </div>
+                        
+                        <!-- Chat IA -->
+                        <div class="bg-white rounded-xl shadow-lg p-8 mb-8 fade-in">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                                <i class="fas fa-robot mr-3 text-indigo-600"></i>
+                                Assistant IA
+                                <span class="text-sm font-normal text-gray-500 ml-2">
+                                    • ${appState.documents.filter(d => d.status === 'completed').length} documents analysés
+                                </span>
+                            </h2>
+
+                            <div class="bg-gray-50 rounded-xl p-6 mb-6" style="height: 500px; overflow-y: auto;" id="chatContainer">
+                                ${appState.chatMessages.map(message => `
+                                    <div class="chat-bubble mb-6 ${message.sender === 'user' ? 'text-right' : 'text-left'}">
+                                        <div class="inline-block max-w-xs lg:max-w-2xl px-6 py-4 rounded-2xl ${
+                                            message.sender === 'user' 
+                                                ? 'user-message text-white ml-auto' 
+                                                : 'ai-response text-gray-800'
+                                        }">
+                                            ${message.sender === 'ai' ? `
+                                                <div class="flex items-center mb-2">
+                                                    <i class="fas fa-robot text-indigo-600 mr-2"></i>
+                                                    <span class="text-xs font-semibold text-indigo-600">Assistant IA</span>
+                                                </div>
+                                            ` : ''}
+                                            <p class="text-sm leading-relaxed whitespace-pre-wrap">${message.text}</p>
+                                            <p class="text-xs mt-2 ${message.sender === 'user' ? 'opacity-75' : 'opacity-60'}">
+                                                ${message.timestamp.toLocaleTimeString('fr-FR')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <div class="space-y-4">
+                                <div class="flex space-x-2">
+                                    <input
+                                        type="text"
+                                        id="chatInput"
+                                        placeholder="Posez une question sur vos documents..."
+                                        class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        onkeypress="if(event.key === 'Enter') handleSendMessage(this.value); this.value = '';"
+                                    />
+                                    <button
+                                        onclick="const input = document.getElementById('chatInput'); handleSendMessage(input.value); input.value = '';"
+                                        class="bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition-all duration-300 hover:shadow-lg"
+                                    >
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                    <button 
+                                        onclick="handleSendMessage('Peux-tu me faire un résumé détaillé de tous mes documents ?')"
+                                        class="px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 text-sm rounded-lg hover:from-indigo-100 hover:to-purple-100 transition-all duration-300 border border-indigo-200"
+                                    >
+                                        <i class="fas fa-file-alt mr-2"></i>
+                                        Résumé général
+                                    </button>
+                                    <button 
+                                        onclick="handleSendMessage('Quels sont les points clés et insights les plus importants ?')"
+                                        class="px-4 py-2 bg-gradient-to-r from-green-50 to-blue-50 text-green-700 text-sm rounded-lg hover:from-green-100 hover:to-blue-100 transition-all duration-300 border border-green-200"
+                                    >
+                                        <i class="fas fa-lightbulb mr-2"></i>
+                                        Points clés
+                                    </button>
+                                    <button 
+                                        onclick="handleSendMessage('Y a-t-il des tendances ou patterns dans mes documents ?')"
+                                        class="px-4 py-2 bg-gradient-to-r from-yellow-50 to-orange-50 text-yellow-700 text-sm rounded-lg hover:from-yellow-100 hover:to-orange-100 transition-all duration-300 border border-yellow-200"
+                                    >
+                                        <i class="fas fa-chart-line mr-2"></i>
+                                        Tendances
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Analytics -->
+                        <div class="bg-white rounded-xl shadow-lg p-8 mb-8 fade-in">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-8">
+                                <i class="fas fa-chart-bar mr-3 text-indigo-600"></i>
+                                Analytiques et Statistiques
+                            </h2>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                                <div class="stats-card text-center bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200">
+                                    <div class="flex items-center justify-center mb-4">
+                                        <div class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-file-alt text-white text-xl"></i>
+                                        </div>
+                                    </div>
+                                    <div class="text-3xl font-bold text-indigo-600 mb-2">${appState.analyticsData.totalDocuments}</div>
+                                    <div class="text-sm text-gray-600">Documents Total</div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        ${appState.analyticsData.documentsAnalyzed} analysés
+                                    </div>
+                                </div>
+                                
+                                <div class="stats-card text-center bg-gradient-to-br from-green-50 to-green-100 border border-green-200">
+                                    <div class="flex items-center justify-center mb-4">
+                                        <div class="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-clock text-white text-xl"></i>
+                                        </div>
+                                    </div>
+                                    <div class="text-3xl font-bold text-green-600 mb-2">${Math.round(appState.analyticsData.timeSaved)}h</div>
+                                    <div class="text-sm text-gray-600">Temps Économisé</div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        +${Math.round(appState.analyticsData.timeSaved * 0.15)}h ce mois
+                                    </div>
+                                </div>
+                                
+                                <div class="stats-card text-center bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
+                                    <div class="flex items-center justify-center mb-4">
+                                        <div class="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-lightbulb text-white text-xl"></i>
+                                        </div>
+                                    </div>
+                                    <div class="text-3xl font-bold text-purple-600 mb-2">${appState.analyticsData.insightsGenerated}</div>
+                                    <div class="text-sm text-gray-600">Insights Générés</div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        Moyenne: ${Math.round(appState.analyticsData.insightsGenerated / Math.max(appState.analyticsData.documentsAnalyzed, 1))} par doc
+                                    </div>
+                                </div>
+                                
+                                <div class="stats-card text-center bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
+                                    <div class="flex items-center justify-center mb-4">
+                                        <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-brain text-white text-xl"></i>
+                                        </div>
+                                    </div>
+                                    <div class="text-3xl font-bold text-blue-600 mb-2">${appState.analyticsData.accuracy.toFixed(1)}%</div>
+                                    <div class="text-sm text-gray-600">Précision IA</div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        Taille: ${appState.analyticsData.totalSize} MB
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                                    <i class="fas fa-chart-line text-indigo-600 mr-2"></i>
+                                    Évolution de l'Activité
+                                </h3>
+                                <div class="chart-container">
+                                    <canvas id="analyticsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Modal de détail de document -->
+                    ${appState.selectedDocument ? `
+                        <div class="modal-overlay no-print" onclick="appState.selectedDocument = null; renderApp()">
+                            <div class="modal-content max-w-4xl w-full mx-4 p-8" onclick="event.stopPropagation()">
+                                <div class="flex justify-between items-center mb-6">
+                                    <h3 class="text-2xl font-bold text-gray-900">${appState.selectedDocument.name}</h3>
+                                    <button 
+                                        onclick="appState.selectedDocument = null; renderApp()"
+                                        class="text-gray-400 hover:text-gray-600 text-2xl p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                    >
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    <div class="lg:col-span-2 space-y-6">
+                                        <div>
+                                            <h4 class="font-bold text-lg mb-3 flex items-center">
+                                                <i class="fas fa-file-alt text-indigo-600 mr-2"></i>
+                                                Informations du Document
+                                            </h4>
+                                            <div class="bg-gray-50 rounded-lg p-4 grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <span class="text-sm font-medium text-gray-500">Type:</span>
+                                                    <p class="font-semibold">${appState.selectedDocument.type}</p>
+                                                </div>
+                                                <div>
+                                                    <span class="text-sm font-medium text-gray-500">Taille:</span>
+                                                    <p class="font-semibold">${appState.selectedDocument.size}</p>
+                                                </div>
+                                                <div>
+                                                    <span class="text-sm font-medium text-gray-500">Date:</span>
+                                                    <p class="font-semibold">${new Date(appState.selectedDocument.date).toLocaleDateString('fr-FR')}</p>
+                                                </div>
+                                                <div>
+                                                    <span class="text-sm font-medium text-gray-500">Statut:</span>
+                                                    <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full ${
+                                                        appState.selectedDocument.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                                        appState.selectedDocument.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                                                        'bg-gray-100 text-gray-800'
+                                                    }">
+                                                        ${appState.selectedDocument.status === 'completed' ? 'Terminé' : 
+                                                         appState.selectedDocument.status === 'processing' ? 'En cours' : 'En attente'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div>
+                                            <h4 class="font-bold text-lg mb-3 flex items-center">
+                                                <i class="fas fa-align-left text-indigo-600 mr-2"></i>
+                                                Résumé Automatique
+                                            </h4>
+                                            <div class="bg-gray-50 rounded-lg p-4">
+                                                <p class="text-gray-700 leading-relaxed">${appState.selectedDocument.summary}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        ${appState.selectedDocument.tags.length > 0 ? `
+                                            <div>
+                                                <h4 class="font-bold text-lg mb-3 flex items-center">
+                                                    <i class="fas fa-tags text-indigo-600 mr-2"></i>
+                                                    Tags
+                                                </h4>
+                                                <div class="flex flex-wrap gap-2">
+                                                    ${appState.selectedDocument.tags.map(tag => `
+                                                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 text-sm rounded-full font-medium">
+                                                            ${tag}
+                                                        </span>
+                                                    `).join('')}
+                                                </div>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    
+                                    <div class="space-y-6">
+                                        ${appState.selectedDocument.insights.length > 0 ? `
+                                            <div>
+                                                <h4 class="font-bold text-lg mb-3 flex items-center">
+                                                    <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+                                                    Insights IA
+                                                </h4>
+                                                <div class="space-y-2">
+                                                    ${appState.selectedDocument.insights.map(insight => `
+                                                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                                            <span class="text-yellow-800 font-medium text-sm">${insight}</span>
+                                                        </div>
+                                                    `).join('')}
+                                                </div>
+                                            </div>
+                                        ` : ''}
+                                        
+                                        <div>
+                                            <h4 class="font-bold text-lg mb-3 flex items-center">
+                                                <i class="fas fa-cogs text-indigo-600 mr-2"></i>
+                                                Actions
+                                            </h4>
+                                            <div class="space-y-3">
+                                                <button class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center">
+                                                    <i class="fas fa-comments mr-2"></i>
+                                                    Discuter avec l'IA
+                                                </button>
+                                                <button class="w-full bg-gray-600 text-white py-3 px-4 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center">
+                                                    <i class="fas fa-download mr-2"></i>
+                                                    Télécharger
+                                                </button>
+                                                <button class="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center">
+                                                    <i class="fas fa-file-export mr-2"></i>
+                                                    Exporter le résumé
+                                                </button>
+                                                <button class="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center">
+                                                    <i class="fas fa-share mr-2"></i>
+                                                    Partager
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Page de profil
+        function ProfilePage() {
+            const user = appState.user || {};
+            const profileData = {
+                firstName: user.name?.split(' ')[0] || '',
+                lastName: user.name?.split(' ')[1] || '',
+                email: user.email || '',
+                phone: '',
+                company: '',
+                position: '',
+                timezone: 'Europe/Paris',
+                language: 'fr'
+            };
+            
+            return `
+                <div class="min-h-screen bg-gray-50">
+                    ${Navbar()}
+                    
+                    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                            <!-- Header -->
+                            <div class="gradient-bg px-8 py-6">
+                                <div class="flex items-center">
+                                    <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mr-6">
+                                        <span class="text-3xl font-bold text-indigo-600">
+                                            ${user.avatar}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h1 class="text-3xl font-bold text-white">${user.name || 'Utilisateur'}</h1>
+                                        <p class="text-indigo-100 mt-1">${user.email}</p>
+                                        <div class="flex items-center mt-2">
+                                            <i class="fas fa-circle text-green-400 text-xs mr-2"></i>
+                                            <span class="text-indigo-100 text-sm">Compte actif</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Contenu -->
+                            <div class="p-8">
+                                <form class="space-y-6">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Prénom
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value="${profileData.firstName}"
+                                                class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Nom
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value="${profileData.lastName}"
+                                                class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            Email
+                                        </label>
+                                        <input
+                                            type="email"
+                                            value="${profileData.email}"
+                                            class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        />
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Téléphone
+                                            </label>
+                                            <input
+                                                type="tel"
+                                                value="${profileData.phone}"
+                                                class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Société
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value="${profileData.company}"
+                                                class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Poste
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value="${profileData.position}"
+                                                class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Fuseau horaire
+                                            </label>
+                                            <select class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                <option ${profileData.timezone === 'Europe/Paris' ? 'selected' : ''}>Europe/Paris</option>
+                                                <option ${profileData.timezone === 'Europe/London' ? 'selected' : ''}>Europe/London</option>
+                                                <option ${profileData.timezone === 'America/New_York' ? 'selected' : ''}>America/New_York</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            Langue préférée
+                                        </label>
+                                        <select class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                            <option ${profileData.language === 'fr' ? 'selected' : ''}>Français</option>
+                                            <option ${profileData.language === 'en' ? 'selected' : ''}>Anglais</option>
+                                            <option ${profileData.language === 'es' ? 'selected' : ''}>Espagnol</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="pt-6">
+                                        <button class="btn-primary w-full text-white py-3 px-4 rounded-lg font-semibold hover:shadow-lg transition-all duration-300">
+                                            Mettre à jour le profil
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Page d'utilisation
+        function HowToUsePage() {
+            return `
+                <div class="min-h-screen">
+                    ${Navbar()}
+                    
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                        <div class="text-center mb-16">
+                            <h1 class="text-4xl font-bold text-gray-900 mb-6">
+                                Comment utiliser AI-Summary-KML
+                            </h1>
+                            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                                Guide étape par étape pour tirer le meilleur parti de notre plateforme
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <!-- Étape 1 -->
+                            <div class="bg-white rounded-xl shadow-lg p-8">
+                                <div class="text-6xl font-bold text-indigo-600 mb-6">1</div>
+                                <h3 class="text-2xl font-bold mb-4">Télécharger vos documents</h3>
+                                <p class="text-gray-600 mb-6">
+                                    Importez vos fichiers PDF, DOCX, PPT ou images depuis votre appareil ou le cloud. 
+                                    Notre système reconnaît automatiquement le type de document.
+                                </p>
+                                <div class="bg-gray-100 rounded-lg p-4">
+                                    <i class="fas fa-cloud-upload-alt text-4xl text-indigo-600 mb-4"></i>
+                                    <p class="text-sm text-gray-600">
+                                        Glissez-déposez vos fichiers ou cliquez pour parcourir vos documents
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Étape 2 -->
+                            <div class="bg-white rounded-xl shadow-lg p-8">
+                                <div class="text-6xl font-bold text-indigo-600 mb-6">2</div>
+                                <h3 class="text-2xl font-bold mb-4">Analyse par intelligence artificielle</h3>
+                                <p class="text-gray-600 mb-6">
+                                    Notre IA traite le document et extrait les informations clés, résume le contenu 
+                                    et identifie les thèmes principaux en quelques secondes.
+                                </p>
+                                <div class="bg-gray-100 rounded-lg p-4">
+                                    <i class="fas fa-brain text-4xl text-indigo-600 mb-4"></i>
+                                    <p class="text-sm text-gray-600">
+                                        L'IA analyse le contenu et génère des insights pertinents
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Étape 3 -->
+                            <div class="bg-white rounded-xl shadow-lg p-8">
+                                <div class="text-6xl font-bold text-indigo-600 mb-6">3</div>
+                                <h3 class="text-2xl font-bold mb-4">Consulter et interagir avec les résultats</h3>
+                                <p class="text-gray-600 mb-6">
+                                    Accédez aux résumés générés, aux insights clés et posez des questions supplémentaires 
+                                    sur vos documents via l'interface de discussion.
+                                </p>
+                                <div class="bg-gray-100 rounded-lg p-4">
+                                    <i class="fas fa-comments text-4xl text-indigo-600 mb-4"></i>
+                                    <p class="text-sm text-gray-600">
+                                        Discutez avec l'assistant IA pour approfondir votre analyse
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Fonction principale de rendu
+        function renderApp() {
+            let pageContent = '';
+            
+            switch (appState.currentPage) {
+                case 'home':
+                    pageContent = LandingPage();
+                    break;
+                case 'login':
+                    pageContent = LoginPage();
+                    break;
+                case 'register':
+                    pageContent = RegisterPage();
+                    break;
+                case 'documents':
+                    pageContent = DocumentsPage();
+                    break;
+                case 'profile':
+                    pageContent = ProfilePage();
+                    break;
+                case 'how-to-use':
+                    pageContent = HowToUsePage();
+                    break;
+                default:
+                    pageContent = LandingPage();
+            }
+            
+            document.getElementById('app').innerHTML = `
+                ${NotificationContainer()}
+                ${pageContent}
+            `;
+            
+            // Initialiser les événements après le rendu
+            initEvents();
+        }
+
+        // Initialiser les événements
+        function initEvents() {
+            // Gestion de l'upload de fichiers
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            
+            if (uploadArea && fileInput) {
+                uploadArea.addEventListener('click', () => {
+                    fileInput.click();
+                });
+                
+                fileInput.addEventListener('change', (e) => {
+                    handleFileUpload(e.target.files);
+                    e.target.value = ''; // Réinitialiser l'input
+                });
+                
+                // Gestion du drag & drop
+                uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.add('dragover');
+                });
+                
+                uploadArea.addEventListener('dragleave', () => {
+                    uploadArea.classList.remove('dragover');
+                });
+                
+                uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.remove('dragover');
+                    if (e.dataTransfer.files.length > 0) {
+                        handleFileUpload(e.dataTransfer.files);
+                    }
+                });
+            }
+            
+            // Gestion de la connexion
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    login(email, password);
+                });
+            }
+            
+            // Gestion de l'inscription
+            const registerForm = document.getElementById('registerForm');
+            if (registerForm) {
+                registerForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const firstName = document.getElementById('firstName').value;
+                    const lastName = document.getElementById('lastName').value;
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    register(firstName, lastName, email, password);
+                });
+            }
+            
+            // Initialiser le graphique si nécessaire
+            const chartCanvas = document.getElementById('analyticsChart');
+            if (chartCanvas) {
+                const ctx = chartCanvas.getContext('2d');
+                
+                const gradient1 = ctx.createLinearGradient(0, 0, 0, 400);
+                gradient1.addColorStop(0, 'rgba(102, 126, 234, 0.3)');
+                gradient1.addColorStop(1, 'rgba(102, 126, 234, 0.05)');
+                
+                const gradient2 = ctx.createLinearGradient(0, 0, 0, 400);
+                gradient2.addColorStop(0, 'rgba(118, 75, 162, 0.3)');
+                gradient2.addColorStop(1, 'rgba(118, 75, 162, 0.05)');
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'],
+                        datasets: [{
+                            label: 'Documents analysés',
+                            data: [12, 19, 15, 25, 22, 30, 28, 35, 32, 40, 38, 45],
+                            borderColor: '#667eea',
+                            backgroundColor: gradient1,
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: '#667eea',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 6
+                        }, {
+                            label: 'Insights générés',
+                            data: [8, 15, 12, 20, 18, 25, 22, 28, 26, 32, 30, 36],
+                            borderColor: '#764ba2',
+                            backgroundColor: gradient2,
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: '#764ba2',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: 'white',
+                                bodyColor: 'white',
+                                cornerRadius: 8,
+                                displayColors: true
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Faire défiler le chat vers le bas
+            const chatContainer = document.getElementById('chatContainer');
+            if (chatContainer) {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+
+        // Initialiser l'application
+        function init() {
+            // Ajouter un message de bienvenue dans le chat
+            if (appState.user) {
+                appState.chatMessages = [{
+                    id: 1,
+                    text: `Bonjour ${appState.user.name} ! Je suis votre assistant IA spécialisé dans l'analyse de documents. J'ai accès à vos documents téléchargés et je peux vous aider à en extraire des informations, générer des résumés personnalisés, identifier des tendances ou répondre à vos questions spécifiques. Comment puis-je vous accompagner aujourd'hui ?`,
+                    sender: 'ai',
+                    timestamp: new Date()
+                }];
+            }
+            
+            renderApp();
+        }
+
+        // Démarrer l'application
+        init();
+    </script>
+</body>
+</html>
